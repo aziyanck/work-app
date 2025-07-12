@@ -1,6 +1,0 @@
-{
-  "allowedOrigins": ["http://localhost:5173", "http://localhost:3000"],
-  "allowedMethods": ["GET", "HEAD", "OPTIONS"],
-  "allowedHeaders": ["Content-Type", "Authorization"],
-  "maxAgeSeconds": 3600
-}
