@@ -102,7 +102,10 @@ export default function App() {
 /* ─── Columns / Cards ────────────────────────────────────────── */
 const TaskColumn = ({ title, color, tasks, onAdd, onEdit, extraBtns, onDelete }) => (
   <div className="bg-white shadow-sm rounded-xl p-5">
-    <h2 className={`text-2xl font-semibold mb-4 text-${color}-600`}>{title}</h2>
+    <h2 className={`text-2xl font-semibold mb-4 text-${color}-600`}>
+  {title} ({tasks.length})
+</h2>
+
 
     {onAdd && title==='Pending' && (
       <button onClick={onAdd}
