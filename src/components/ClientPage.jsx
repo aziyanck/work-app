@@ -166,6 +166,11 @@ export default function Client() {
                         .filter((c) =>
                             c.name.toLowerCase().includes(search.toLowerCase())
                         )
+                        .sort((a, b) => {
+                            const aCompleted = clientStats[a.id]?.completed || 0;
+                            const bCompleted = clientStats[b.id]?.completed || 0;
+                            return bCompleted - aCompleted; // descending
+                        })
                         .map((c) => (
                             <div
                                 key={c.id}
