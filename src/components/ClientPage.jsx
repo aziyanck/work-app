@@ -6,6 +6,7 @@ import {
     getWorkCountsByClient,
     findClientByName,
     createClient,
+    deleteClientById
 } from "../services/client";
 import ClientCard from "./ClientCard";
 import ClientTasks from "./ClientTasks";
@@ -28,6 +29,27 @@ const XIcon = () => (
 
 /* ─── Main component ─────────────────────────────────────── */
 export default function Client() {
+
+    const [shouldReload, setShouldReload] = useState(false);
+    const loadClients = async () => {
+        try {
+            const list = await getAllClients();
+            setClients(list);
+
+            const stats = {};
+            await Promise.all(
+                list.map(async (c) => {
+                    stats[c.id] = await getWorkCountsByClient(c.id);
+                })
+            );
+            setStats(stats);
+        } catch (err) {
+            console.error("Load error:", err);
+            alert("Could not load clients – see console.");
+        }
+    };
+
+
     /* UI state */
     const [search, setSearch] = useState("");
     const [selectedClient, setSelectedClient] = useState(null);   // null = dashboard
@@ -42,26 +64,20 @@ export default function Client() {
     const [saving, setSaving] = useState(false);
 
     /* ─ Fetch all clients + per‑client work counts on mount ─ */
+    // ⏱ On mount
     useEffect(() => {
-        (async () => {
-            try {
-                const list = await getAllClients();
-                setClients(list);
-
-                /* fetch counts in parallel */
-                const stats = {};
-                await Promise.all(
-                    list.map(async (c) => {
-                        stats[c.id] = await getWorkCountsByClient(c.id);
-                    })
-                );
-                setStats(stats);
-            } catch (err) {
-                console.error("Load error:", err);
-                alert("Could not load clients – see console.");
-            }
-        })();
+        loadClients();
     }, []);
+
+    // 🔁 On reload trigger
+    useEffect(() => {
+        if (shouldReload) {
+            loadClients();
+            setShouldReload(false);
+        }
+    }, [shouldReload]);
+
+
 
     /* ─ Add‑client modal save ─ */
     async function handleSaveClient() {
@@ -87,16 +103,35 @@ export default function Client() {
         }
     }
 
+    async function handleDeleteClient(id) {
+        const sure = confirm("Are you sure you want to delete this client?");
+        if (!sure) return;
+
+        try {
+            await deleteClientById(id);
+            setClients(clients.filter(c => c.id !== id));
+            const updatedStats = { ...clientStats };
+            delete updatedStats[id];
+            setStats(updatedStats);
+        } catch (err) {
+            console.error("Delete error:", err);
+            alert("Could not delete – see console.");
+        }
+    }
+
     /* ─────────────────────── render ────────────────────────── */
     if (selectedClient) {
-        /* detail view (task board) */
         return (
             <ClientTasks
                 client={selectedClient}
-                onBack={() => setSelectedClient(null)}
+                onBack={() => {
+                    setSelectedClient(null);
+                    setShouldReload(true); // Trigger reload
+                }}
             />
         );
     }
+
 
     /* dashboard view */
     return (
@@ -139,14 +174,10 @@ export default function Client() {
                             >
                                 <ClientCard
                                     name={c.name}
-                                    counts={
-                                        clientStats[c.id] || {
-                                            pending: 0,
-                                            ongoing: 0,
-                                            completed: 0,
-                                        }
-                                    }
+                                    counts={clientStats[c.id] || { pending: 0, ongoing: 0, completed: 0, unpaidCompleted: 0 }}
+                                    onDelete={() => handleDeleteClient(c.id)}
                                 />
+
                             </div>
                         ))}
                     {clients.length === 0 && (
