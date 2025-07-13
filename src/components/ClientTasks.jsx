@@ -112,18 +112,18 @@ export default function ClientTasks({ client, onBack }) {
                     onAdd={openNew} onEdit={openEdit}
                     extraBtns={(id) => (
                         <>
-                            <ActionBtn text="Start" color="green-200" onClick={() => moveStatus(id, "ongoing")} />
-                            <ActionBtn text="Done" color="gray-200" onClick={() => moveStatus(id, "completed")} />
+                            <ActionBtn text="Start" color="green" onClick={() => moveStatus(id, "ongoing")} />
+                            <ActionBtn text="Done" color="gray" onClick={() => moveStatus(id, "completed")} />
                         </>
                     )}
                     onDelete={delTask} />
 
-                <TaskColumn title="Ongoing" color="purple-200" tasks={ongoing}
+                <TaskColumn title="Ongoing" color="purple" tasks={ongoing}
                     onEdit={openEdit}
                     extraBtns={(id) => (<ActionBtn text="Done" color="blue" onClick={() => moveStatus(id, "completed")} />)}
                     onDelete={delTask} />
 
-                <TaskColumn title="Completed" color="gray-200" tasks={completed}
+                <TaskColumn title="Completed" color="gray" tasks={completed}
                     onEdit={openEdit}
                     extraBtns={(id) => (<TogglePaidBtn task={tasks.find(t => t.id === id)} onClick={() => togglePaid(id)} />)}
                     onDelete={delTask} />
@@ -180,7 +180,7 @@ const TaskCard = ({ task, children }) => (
 
 const ActionBtn = ({ text, color, onClick }) => (
     <button onClick={onClick}
-        className={`flex-1 bg-${color}-500 hover:bg-${color}-600 text-white text-sm font-semibold px-3 py-1.5 rounded-md`}>
+        className={`flex-1 bg-${color}-500 hover:bg-${color}-600 text-gray-600 text-sm font-semibold px-3 py-1.5 rounded-md`}>
         {text}
     </button>
 );
