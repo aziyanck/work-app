@@ -1,4 +1,6 @@
 import { supabase } from './supabaseClients';
+const { data: { user } } = await supabase.auth.getUser();
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────
 export async function fetchTasks() {

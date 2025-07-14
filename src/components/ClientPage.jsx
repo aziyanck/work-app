@@ -1,4 +1,4 @@
-
+import { supabase } from "../supabaseClients";
 
 import React, { useEffect, useState } from "react";
 import {
@@ -141,6 +141,13 @@ export default function Client() {
                 <h1 className="text-3xl sm:text-4xl font-bold mb-6 text-center">
                     Client Dashboard
                 </h1>
+                <button
+                    onClick={() => supabase.auth.signOut()}
+                    className="text-sm text-gray-500 underline absolute top-4 right-4"
+                >
+                    Logout
+                </button>
+
 
                 {/* search + add row */}
                 <div className="flex items-center gap-3 mb-6">

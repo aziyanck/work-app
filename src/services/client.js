@@ -5,30 +5,35 @@ import { supabase } from "../supabaseClients";
 export async function findClientByName(name) {
   /* ... */
 }
+
+const { data: { user } } = await supabase.auth.getUser();
+
 // services/client.js
 export async function createClient(name) {
+  const { data: { user } } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("clients")
-    .insert({ name })
-    .select() // ← so Supabase returns the row
-    .single(); // ← unwrap array
-
+    .insert([{ name, user_id: user.id }])
+    .select()
+    .single();
   if (error) throw error;
-  return data; // now a plain object
+  return data;
 }
+
 
 /**
  * Fetches all clients from the `clients` table.
  */
 export async function getAllClients() {
+  const { data: { user } } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("clients")
     .select("*")
-    .order("created_at", { ascending: false });
-
+    .eq("user_id", user.id);
   if (error) throw error;
   return data;
 }
+
 
 /**
  * Returns an object with count of works grouped by status
