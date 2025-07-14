@@ -125,3 +125,137 @@ export default function ClientTasks({ client, onBack }) {
     </div>
   );
 }
+
+
+/* ─── Re‑use your original column / card / modal helpers ───── */
+const TaskColumn = ({ title, color, tasks, onAdd, onEdit, extraBtns, onDelete }) => (
+    <div className="bg-white shadow-sm rounded-xl p-5">
+        <h2 className={`text-2xl font-semibold mb-4 text-${color}-600`}>
+            {title} ({tasks.length})
+        </h2>
+
+        {onAdd && title === "Pending" && (
+            <button onClick={onAdd}
+                className="w-full flex items-center justify-center gap-2 bg-blue-50 text-blue-700 border-2 border-dashed border-blue-200 rounded-lg p-3 mb-4 hover:bg-blue-100 transition font-semibold">
+                <PlusIcon /> Add Task
+            </button>)}
+
+        <div className="space-y-4">
+            {tasks.length
+                ? tasks.map(t => (
+                    <TaskCard key={t.id} task={t}>
+                        <div className="flex gap-2 flex-wrap mt-4">
+                            {onEdit && <ActionBtn text="Edit" color="yellow" onClick={() => onEdit(t)} />}
+                            {extraBtns && extraBtns(t.id)}
+                            <button onClick={() => onDelete(t.id)}
+                                className="p-2 bg-red-50 hover:bg-red-100 rounded-md"><TrashIcon /></button>
+                        </div>
+                    </TaskCard>))
+                : <p className="text-gray-500 text-center py-4">No tasks.</p>}
+        </div>
+    </div>
+);
+
+const TaskCard = ({ task, children }) => (
+    <div className={`p-4 rounded-lg border ${task.paid ? "bg-teal-50 border-teal-200" : "bg-gray-50 border-gray-200"}`}>
+        {task.image_url && <img src={task.image_url} alt=""
+            className="w-full h-32 object-cover rounded-md mb-3"
+            onError={(e) => { e.target.style.display = "none"; }} />}
+        <p className="font-medium">{task.description}</p>
+        {task.due_date && <p className="text-sm text-gray-500">Due: {task.due_date}</p>}
+        {children}
+    </div>
+);
+
+const ActionBtn = ({ text, color, onClick }) => (
+    <button onClick={onClick}
+        className={`flex-1 bg-${color}-500 hover:bg-${color}-600 text-gray-600 text-sm font-semibold px-3 py-1.5 rounded-md`}>
+        {text}
+    </button>
+);
+
+const TogglePaidBtn = ({ task, onClick }) => (
+    <button onClick={onClick}
+        className={`w-full px-3 py-2 rounded-md text-sm font-bold ${task.paid ? "bg-teal-100 text-teal-800" : "bg-red-500 text-white hover:bg-red-600"}`}>
+        {task.paid ? "✓ Paid" : "Mark Paid"}
+    </button>
+);
+
+/* ─── Modal (unchanged from your template) ──────────────────── */
+const TaskModal = ({ task, close, save }) => {
+    const [description, setDescription] = useState("");
+    const [imageFile, setImageFile] = useState(null);
+    const [dueDate, setDueDate] = useState("");
+    const [uploading, setUploading] = useState(false);
+
+    useEffect(() => {
+        if (task) {
+            setDescription(task.description || "");
+            setDueDate(task.due_date || "");
+        }
+    }, [task]);
+
+    const uploadIfNeeded = async () => {
+        if (!imageFile) return task?.image_url || "";
+        setUploading(true);
+        try {
+            const ext = imageFile.name.split(".").pop();
+            const path = `uploads/${Date.now()}.${ext}`;
+            const { error } = await supabase.storage
+                .from("task-images")
+                .upload(path, imageFile);
+            if (error) throw error;
+            const { data } = supabase.storage
+                .from("task-images")
+                .getPublicUrl(path);
+            return data.publicUrl;
+        } finally { setUploading(false); }
+    };
+
+    const handleSubmit = async (statusWanted) => {
+        if (!description.trim()) return alert("Description required");
+        const url = await uploadIfNeeded();
+        save({ description, image_url: url, due_date: dueDate || null }, statusWanted);
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg relative">
+                <button onClick={close}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><XIcon /></button>
+                <h3 className="text-2xl font-semibold mb-6">{task ? "Update Task" : "New Task"}</h3>
+
+                <div className="space-y-4">
+                    <TextInput label="Description" value={description} onChange={setDescription} required />
+                    <div>
+                        <label className="block text-sm font-medium mb-1">Upload File</label>
+                        <input type="file" onChange={e => setImageFile(e.target.files[0])}
+                            className="w-full p-2 border rounded-lg" />
+                    </div>
+                    <TextInput label="Due Date" type="date" value={dueDate} onChange={setDueDate} />
+
+                    <div className="flex gap-3">
+                        <button onClick={() => handleSubmit(task?.status || "pending")}
+                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg"
+                            disabled={uploading}>{uploading ? "Uploading…" : task ? "Save" : "Add as Pending"}</button>
+                        {!task && (
+                            <button onClick={() => handleSubmit("completed")}
+                                className="px-4 py-3 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-semibold">
+                                Add as Completed
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const TextInput = ({ label, value, onChange, type = "text", required }) => (
+    <div>
+        <label className="block text-sm font-medium mb-1">{label}</label>
+        <input type={type} value={value} onChange={e => onChange(e.target.value)}
+            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-400"
+            required={required} />
+    </div>
+);
